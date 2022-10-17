@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useHistory, useParams } from "react-router";
+import { CurrentUser } from "../contexts/CurrentUser";
 import CommentCard from "./CommentCard";
 import NewCommentForm from "./NewCommentForm";
 
 function PlaceDetails() {
   const { placeId } = useParams();
 
+  const { currentUser } = useContext(CurrentUser);
   const history = useHistory();
 
   const [place, setPlace] = useState(null);
@@ -35,10 +37,16 @@ function PlaceDetails() {
   }
 
   async function deleteComment(deletedComment) {
-    await fetch(
+    const response = await fetch(
       `http://localhost:5000/places/${place.placeId}/comments/${deletedComment.commentId}`,
       {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          //prettier-ignore
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(deleteComment),
       }
     );
 
@@ -56,14 +64,17 @@ function PlaceDetails() {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json",
+          //prettier-ignore
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(commentAttributes),
       }
     );
 
     const comment = await response.json();
+    comment.authorId = currentUser.userId;
+    console.log(comment.authorId);
 
     setPlace({
       ...place,
